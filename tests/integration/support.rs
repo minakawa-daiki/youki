@@ -1,11 +1,14 @@
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf,fs};
 use uuid::Uuid;
 use rand::Rng;
+use std::process::{Command,Stdio};
 
+pub fn initialize_test(project_path: &PathBuf) {
+    prepare_test_workspace(project_path);
+}
 
-pub fn clean() {
-    reset_container();
-    create_container();
+pub fn clean_test(project_path: &PathBuf) {
+    delete_test_workspace(project_path);
 }
 
 pub fn create_project_path() -> PathBuf {
@@ -34,10 +37,28 @@ pub fn generate_uuid() -> Uuid {
 }
 
 // TODO
-fn reset_container() {
-    
+fn prepare_test_workspace(project_path: &PathBuf) {
+    let _result = fs::create_dir_all(project_path.join("integration-test-ws/rootfs"));
+    let _result2 = env::set_current_dir(project_path.join("integration-test-ws"));
+    let cmd = Command::new("docker")
+        .arg("export")
+        .arg("$(docker create busybox)")
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    Command::new("tar")
+        .stdin(cmd.stdout.unwrap())
+        .arg("-C")
+        .arg("rootfs")
+        .arg("-xvf")
+        .arg("-")
+        .stdout(Stdio::null())
+        .status()
+        .expect("failed to execute process");
 }
 
+
 // TODO
-fn create_container() {
+fn delete_test_workspace(project_path: &PathBuf) {
+    
 }
